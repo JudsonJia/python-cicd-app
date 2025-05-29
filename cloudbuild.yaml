@@ -1,0 +1,69 @@
+﻿steps:
+  # Step 1: Run tests
+  - name: 'python:3.11'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "Installing dependencies..."
+        pip install -r requirements.txt
+        echo "Running tests..."
+        export PYTHONPATH=/workspace/src
+        python -m pytest tests/ -v --tb=short
+    id: 'test'
+
+  # Step 2: Build Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: 
+      - 'build'
+      - '-t'
+      - 'gcr.io/sit707-cicd-project-123456/python-cicd-app:latest'
+      - '.'
+    id: 'build'
+    waitFor: ['test']
+
+  # Step 3: Push image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/sit707-cicd-project-123456/python-cicd-app:latest']
+    id: 'push'
+    waitFor: ['build']
+
+  # Step 4: Deploy to Cloud Run
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'python-cicd-app'
+      - '--image'
+      - 'gcr.io/sit707-cicd-project-123456/python-cicd-app:latest'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--port'
+      - '8080'
+      - '--memory'
+      - '512Mi'
+      - '--cpu'
+      - '1'
+      - '--min-instances'
+      - '0'
+      - '--max-instances'
+      - '10'
+      - '--set-env-vars'
+      - 'PYTHONPATH=/app/src'
+    id: 'deploy'
+    waitFor: ['push']
+
+# Build configuration
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: 'E2_HIGHCPU_8'
+
+# Build timeout
+timeout: '1800s'
+
+# Images to be pushed
+images:
+  - 'gcr.io/sit707-cicd-project-123456/python-cicd-app:latest'
