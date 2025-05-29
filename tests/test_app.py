@@ -64,24 +64,21 @@ class TaskAPITestCase(unittest.TestCase):
         response = self.app.post('/tasks',
                                  data=json.dumps(task_data),
                                  content_type='application/json')
-        # INTENTIONAL FAILURE - expecting 200 but should be 201
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 201)
 
     def test_health_wrong_format_WILL_FAIL(self):
         '''Test that will fail - expecting wrong response format'''
         response = self.app.get('/health')
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data)
-        # INTENTIONAL FAILURE - expecting wrong field name
-        self.assertIn('health_status', data)  # Should be 'status'
+        self.assertIn('status', data)
 
     def test_get_tasks_wrong_structure_WILL_FAIL(self):
         '''Test that will fail - expecting wrong response structure'''
         response = self.app.get('/tasks')
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data)
-        # INTENTIONAL FAILURE - expecting wrong field name
-        self.assertIn('task_list', data)  # Should be 'tasks'
+        self.assertIn('tasks', data)
 
 
 if __name__ == '__main__':
