@@ -1,5 +1,5 @@
 ﻿steps:
-  # Step 1: Simple test step
+  # Step 1: Run tests
   - name: 'python:3.11'
     entrypoint: 'bash'
     args:
@@ -7,14 +7,19 @@
       - |
         echo "Installing dependencies..."
         pip install --upgrade pip
-        pip install pytest flask
+        pip install pytest flask pytest-flask
         if [ -f requirements.txt ]; then
           pip install -r requirements.txt
         fi
-        echo "Running syntax check..."
-        python -c "import sys; print('Python version:', sys.version)"
-        find . -name "*.py" -exec python -m py_compile {} \;
-        echo "Basic tests completed successfully"
+        
+        echo "Setting Python path..."
+        export PYTHONPATH=/workspace:/workspace/src
+        
+        echo "Looking for test files..."
+        find . -name "*test*.py" -o -name "test_*.py"
+        
+        echo "Running pytest..."
+        python -m pytest -v --tb=short
     id: 'test'
 
   # Step 2: Build Docker image
